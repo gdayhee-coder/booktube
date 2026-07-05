@@ -1,14 +1,27 @@
-const https = require("https");
+import https from "https";
 
-module.exports = async function handler(req, res) {
+export default function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  if (req.method !== "GET") return res.status(405).json({ error: "Method Not Allowed" });
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method Not Allowed" });
+    return;
+  }
 
-  const q = (req.query.q || "").toString().trim();
-  if (!q) return res.status(400).json({ error: "q required" });
+  let q = "";
+  try {
+    const u = new URL(req.url, "http://localhost");
+    q = (u.searchParams.get("q") || "").trim();
+  } catch (e) {}
+  if (!q) {
+    res.status(400).json({ error: "q required" });
+    return;
+  }
 
   const key = process.env.YOUTUBE_API_KEY;
-  if (!key) return res.status(500).json({ error: "API key not configured" });
+  if (!key) {
+    res.status(500).json({ error: "API key not configured" });
+    return;
+  }
 
   const params = new URLSearchParams({
     part: "snippet",
@@ -54,4 +67,4 @@ module.exports = async function handler(req, res) {
       resolve();
     });
   });
-};
+}
