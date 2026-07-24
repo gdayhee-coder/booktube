@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>북튜브 관리자 — 학생 관리</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:#FAF9F3;padding:20px;color:#3C443A}
+.wrap{max-width:760px;margin:0 auto}
+.hdr{background:linear-gradient(180deg,#A3B394,#8FA07E);border-radius:14px;padding:18px 20px;margin-bottom:18px}
+.hdr h1{font-size:18px;font-weight:900;color:#FDFCF4}
+.hdr p{font-size:11px;color:rgba(253,252,244,0.8);margin-top:2px}
+.login{background:#FDFCF8;border:1.5px solid #E2E4D8;border-radius:14px;padding:24px;text-align:center;max-width:340px;margin:40px auto}
+.login h2{font-size:15px;font-weight:800;margin-bottom:14px}
+.login input{width:100%;padding:12px;border:2px solid #6B7C60;border-radius:10px;font-size:15px;text-align:center;margin-bottom:10px;font-family:inherit;outline:none}
+.login button{width:100%;padding:12px;background:#6B7C60;color:#FDFCF4;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
+.card{background:#FDFCF8;border:1.5px solid #E2E4D8;border-radius:14px;padding:16px;margin-bottom:16px}
+.card h3{font-size:14px;font-weight:800;margin-bottom:12px}
+.create-row{display:flex;gap:8px}
+.create-row input{flex:1;padding:10px 12px;border:1.5px solid #E2E4D8;border-radius:9px;font-size:13px;font-family:inherit;outline:none}
+.create-row input.pin{flex:0 0 90px;text-align:center}
+.create-row button{padding:10px 16px;background:#6B7C60;color:#FDFCF4;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}
+.new-account{margin-top:12px;background:#EDF0E6;border:1px solid #A8B5A0;border-radius:10px;padding:12px 14px;display:none}
+.new-account.show{display:block}
+.new-account b{color:#5A6B50}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat{background:#FDFCF8;border:1px solid #E2E4D8;border-radius:12px;padding:14px;text-align:center}
+.stat-n{font-size:22px;font-weight:900;color:#6B7C60}
+.stat-l{font-size:11px;color:#9AA391;margin-top:2px}
+.tbl{background:#FDFCF8;border:1px solid #E2E4D8;border-radius:12px;overflow:hidden}
+.row{display:grid;grid-template-columns:1.6fr 1fr 0.8fr 0.8fr 0.8fr 0.5fr;padding:11px 14px;border-bottom:1px solid #EDE9DE;font-size:12.5px;align-items:center}
+.row.head{background:#EDF0E6;font-weight:800;font-size:11px;color:#6F7A68}
+.row:last-child{border-bottom:none}
+.name{font-weight:700}
+.idpin{font-size:10.5px;color:#9AA391}
+.streak{font-weight:800;color:#B4823F}
+.del{background:none;border:none;color:#C9908C;font-size:15px;cursor:pointer}
+.muted{color:#9AA391;font-size:10px}
+.refresh{margin-top:14px;padding:10px 18px;background:#FDFCF8;border:1.5px solid #6B7C60;color:#6B7C60;border-radius:20px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.empty{text-align:center;padding:40px;color:#9AA391;font-size:13px}
+.err{color:#D9534F;font-size:12px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr"><h1>📊 북튜브 관리자</h1><p>학생 계정을 발급하고 흘려듣기 현황을 관리하세요</p></div>
+
+  <div id="login" class="login">
+    <h2>🔒 관리자 코드 입력</h2>
+    <input id="code" type="password" placeholder="관리자 코드" onkeydown="if(event.key==='Enter')enter()">
+    <button onclick="enter()">확인</button>
+    <div id="loginErr" class="err"></div>
+  </div>
+
+  <div id="dash" style="display:none">
+    <!-- 계정 발급 -->
+    <div class="card">
+      <h3>➕ 학생 계정 발급</h3>
+      <div class="create-row">
+        <input id="newName" placeholder="학생 이름 또는 번호">
+        <input id="newPin" class="pin" placeholder="비번4자리" maxlength="4" inputmode="numeric">
+        <button onclick="createStudent()">발급</button>
+      </div>
+      <div id="newAcc" class="new-account"></div>
+      <div id="createErr" class="err"></div>
+    </div>
+
+    <!-- 통계 -->
+    <div class="stats">
+      <div class="stat"><div class="stat-n" id="s-total">0</div><div class="stat-l">전체 학생</div></div>
+      <div class="stat"><div class="stat-n" id="s-active">0</div><div class="stat-l">오늘 활동</div></div>
+      <div class="stat"><div class="stat-n" id="s-max">0</div><div class="stat-l">최고 연속</div></div>
+    </div>
+
+    <!-- 목록 -->
+    <div class="tbl" id="tbl"></div>
+    <div style="text-align:center"><button class="refresh" onclick="load()">🔄 새로고침</button></div>
+  </div>
+</div>
+
+<script>
+let savedCode = "";
+function enter(){
+  const c = document.getElementById("code").value.trim();
+  if(!c) return;
+  savedCode = c;
+  load(true);
+}
+async function load(first){
+  try{
+    const r = await fetch("/api/track?action=list&code="+encodeURIComponent(savedCode));
+    if(r.status===401){ document.getElementById("loginErr").textContent="코드가 올바르지 않아요."; return; }
+    const j = await r.json();
+    if(j.error) throw new Error(j.error);
+    document.getElementById("login").style.display="none";
+    document.getElementById("dash").style.display="block";
+    render(j.students||[]);
+  }catch(e){
+    document.getElementById("loginErr").textContent="불러오기 실패: "+e.message;
+  }
+}
+async function createStudent(){
+  const name = document.getElementById("newName").value.trim();
+  const pin = document.getElementById("newPin").value.trim();
+  document.getElementById("createErr").textContent="";
+  if(!name){ document.getElementById("createErr").textContent="이름을 입력하세요."; return; }
+  if(!/^\d{4}$/.test(pin)){ document.getElementById("createErr").textContent="비번은 숫자 4자리로 입력하세요."; return; }
+  try{
+    const r = await fetch(`/api/track?action=create&code=${encodeURIComponent(savedCode)}&name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}`);
+    const j = await r.json();
+    if(j.error) throw new Error(j.error);
+    const box = document.getElementById("newAcc");
+    box.className="new-account show";
+    box.innerHTML=`✅ 발급 완료!<br>학생에게 알려주세요 → 아이디 <b>${j.id}</b> · 비밀번호 <b>${j.pin}</b>`;
+    document.getElementById("newName").value="";
+    document.getElementById("newPin").value="";
+    load();
+  }catch(e){
+    document.getElementById("createErr").textContent="발급 실패: "+e.message;
+  }
+}
+async function delStudent(id, name){
+  if(!confirm(`'${name}' 학생 계정을 삭제할까요? 기록도 사라져요.`)) return;
+  try{
+    await fetch(`/api/track?action=delete&code=${encodeURIComponent(savedCode)}&id=${encodeURIComponent(id)}`);
+    load();
+  }catch(e){ alert("삭제 실패"); }
+}
+function isToday(iso){
+  if(!iso) return false;
+  const d=new Date(iso), n=new Date();
+  return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();
+}
+function render(list){
+  document.getElementById("s-total").textContent=list.length;
+  document.getElementById("s-active").textContent=list.filter(s=>isToday(s.updated)&&s.streak>0).length;
+  document.getElementById("s-max").textContent=list.reduce((m,s)=>Math.max(m,s.streak||0),0);
+  const tbl=document.getElementById("tbl");
+  if(!list.length){ tbl.innerHTML='<div class="empty">아직 발급된 학생이 없어요.<br>위에서 계정을 발급해주세요.</div>'; return; }
+  let html='<div class="row head"><div>이름</div><div>아이디/비번</div><div>연속</div><div>이번달</div><div>총</div><div></div></div>';
+  list.forEach(s=>{
+    html+=`<div class="row">
+      <div class="name">${esc(s.name)}<div class="muted">${fmt(s.updated)}</div></div>
+      <div class="idpin">${esc(s.id)} · ${esc(s.pin)}</div>
+      <div class="streak">🔥${s.streak||0}</div>
+      <div>${s.month||0}일</div>
+      <div>${s.total||0}일</div>
+      <div><button class="del" onclick="delStudent('${esc(s.id)}','${esc(s.name)}')">🗑</button></div>
+    </div>`;
+  });
+  tbl.innerHTML=html;
+}
+function esc(t){const d=document.createElement("div");d.textContent=t||"";return d.innerHTML;}
+function fmt(iso){if(!iso)return"미접속";const d=new Date(iso);return `최근 ${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;}
+</script>
+</body>
+</html>
